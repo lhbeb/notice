@@ -172,9 +172,34 @@ export async function getOrdersNeedingRetry(maxRetries: number = 5): Promise<any
 }
 
 /**
+ * Order type from database
+ */
+export interface Order {
+  id: string;
+  product_slug: string;
+  product_title: string;
+  product_price: number;
+  customer_name: string;
+  customer_email: string;
+  customer_phone?: string | null;
+  shipping_address: string;
+  shipping_city: string;
+  shipping_state: string;
+  shipping_zip: string;
+  full_order_data?: any;
+  email_sent: boolean;
+  email_error?: string | null;
+  email_retry_count?: number;
+  next_retry_at?: string | null;
+  created_at?: string;
+  updated_at?: string;
+  [key: string]: any; // Allow additional properties
+}
+
+/**
  * Get order by ID
  */
-export async function getOrderById(orderId: string) {
+export async function getOrderById(orderId: string): Promise<Order | null> {
   try {
     console.log(`🔍 Fetching order ${orderId} from database...`);
     const { data, error } = await supabaseAdmin
@@ -199,7 +224,7 @@ export async function getOrderById(orderId: string) {
     }
 
     console.log(`✅ Order ${orderId} fetched successfully`);
-    return data;
+    return data as Order;
   } catch (error) {
     console.error('❌ Exception fetching order:', error);
     if (error instanceof Error) {
