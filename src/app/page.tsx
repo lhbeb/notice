@@ -19,7 +19,11 @@ export default function ClosureNoticePage() {
           <img
             src="/logosvg.svg"
             alt="HappyDeel Logo"
+            width="200"
+            height="60"
             className="w-48 h-auto max-w-[200px]"
+            style={{ display: 'block', maxWidth: '200px', height: 'auto' }}
+            loading="eager"
           />
         </div>
 

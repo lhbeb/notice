@@ -6,12 +6,17 @@ import { isAdmin } from '@/lib/supabase/auth';
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Redirect admin login to home page (closure notice)
+  if (pathname === '/admin/login' || pathname.startsWith('/admin/login')) {
+    return NextResponse.redirect(new URL('/', request.url));
+  }
+
   // Import shouldBypassAuth dynamically to avoid issues
   const { shouldBypassAuth } = await import('@/lib/supabase/auth');
   const bypassAuth = shouldBypassAuth();
 
-  // Protect admin routes (except login)
-  if (pathname.startsWith('/admin') && !pathname.startsWith('/admin/login')) {
+  // Protect admin routes (except login - which is now redirected above)
+  if (pathname.startsWith('/admin')) {
     // Bypass authentication in development if enabled
     if (bypassAuth) {
       console.log('🔓 [MIDDLEWARE] Bypassing authentication for:', pathname);
@@ -23,8 +28,8 @@ export async function middleware(request: NextRequest) {
     const token = request.cookies.get('admin_token')?.value;
 
     if (!token) {
-      // No token, redirect to login
-      return NextResponse.redirect(new URL('/admin/login', request.url));
+      // No token, redirect to home (closure notice)
+      return NextResponse.redirect(new URL('/', request.url));
     }
 
     try {
@@ -37,9 +42,9 @@ export async function middleware(request: NextRequest) {
         supabaseAdmin = supabaseModule.supabaseAdmin;
         isAdmin = authModule.isAdmin;
       } catch (importError: any) {
-        // If Supabase env vars are missing, redirect to login
+        // If Supabase env vars are missing, redirect to home (closure notice)
         console.error('Failed to import Supabase:', importError.message);
-        const response = NextResponse.redirect(new URL('/admin/login', request.url));
+        const response = NextResponse.redirect(new URL('/', request.url));
         response.cookies.delete('admin_token');
         return response;
       }
@@ -48,8 +53,8 @@ export async function middleware(request: NextRequest) {
       const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
 
       if (error || !user) {
-        // Invalid token, redirect to login
-        const response = NextResponse.redirect(new URL('/admin/login', request.url));
+        // Invalid token, redirect to home (closure notice)
+        const response = NextResponse.redirect(new URL('/', request.url));
         response.cookies.delete('admin_token');
         return response;
       }
@@ -57,8 +62,8 @@ export async function middleware(request: NextRequest) {
       // Check if user is admin
       const adminStatus = await isAdmin(user.email || '');
       if (!adminStatus) {
-        // Not an admin, redirect to login
-        const response = NextResponse.redirect(new URL('/admin/login', request.url));
+        // Not an admin, redirect to home (closure notice)
+        const response = NextResponse.redirect(new URL('/', request.url));
         response.cookies.delete('admin_token');
         return response;
       }
@@ -68,21 +73,25 @@ export async function middleware(request: NextRequest) {
       response.headers.set('x-pathname', pathname);
       return response;
     } catch (error) {
-      // Error verifying token, redirect to login
-      const response = NextResponse.redirect(new URL('/admin/login', request.url));
+      // Error verifying token, redirect to home (closure notice)
+      const response = NextResponse.redirect(new URL('/', request.url));
       response.cookies.delete('admin_token');
       return response;
     }
   }
 
   // Redirect all non-admin, non-home, non-api routes to home (closure notice)
-  // Allow: /, /admin/*, /api/*, static files
+  // Allow: /, /admin/*, /api/*, static files, and public assets
+  const isStaticFile = 
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/favicon') ||
+    pathname.match(/\.(svg|png|jpg|jpeg|gif|webp|ico|css|js|woff|woff2|ttf|eot)$/i);
+  
   if (
     pathname !== '/' &&
     !pathname.startsWith('/admin') &&
     !pathname.startsWith('/api') &&
-    !pathname.startsWith('/_next') &&
-    pathname !== '/favicon.ico'
+    !isStaticFile
   ) {
     return NextResponse.redirect(new URL('/', request.url));
   }
