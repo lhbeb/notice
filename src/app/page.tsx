@@ -1,44 +1,98 @@
-import Image from 'next/image';
+import React, { Suspense } from 'react';
+import Hero from '@/components/Hero';
+import SameDayShipping from '@/components/SameDayShipping';
+import FeaturedProduct from '@/components/FeaturedProduct';
+import ProductGrid from '@/components/ProductGrid';
+import HomeReviews from '@/components/HomeReviews';
+import FashionProducts from '@/components/FashionProducts';
+import { getProducts, getFeaturedProducts } from '@/lib/data';
+import { homeReviews, homeReviewsStats } from '@/lib/homeReviews';
+import ScrollToTop from '@/components/ScrollToTop';
+import type { Product } from '@/types/product';
 
-export default function HomePage() {
+// Use a deterministic seed-based shuffle to avoid hydration mismatches
+function getRandomProducts(products: Product[], count: number): Product[] {
+  if (products.length === 0) return [];
+  
+  // Use a deterministic seed (current day) to ensure consistent results across SSR and client
+  const today = new Date();
+  const seed = today.getDate() + today.getMonth() * 31 + today.getFullYear() * 365;
+  
+  // Simple seeded shuffle function
+  const shuffled = [...products];
+  let currentSeed = seed;
+  
+  // Generate pseudo-random number from seed
+  const seededRandom = () => {
+    currentSeed = (currentSeed * 9301 + 49297) % 233280;
+    return currentSeed / 233280;
+  };
+  
+  // Fisher-Yates shuffle with seeded random
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(seededRandom() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  
+  return shuffled.slice(0, count);
+}
+
+export default async function HomePage() {
+  try {
+    const [allProducts, featuredFromAdmin] = await Promise.all([
+      getProducts(),
+      getFeaturedProducts(),
+    ]);
+
+    const featuredProducts = (featuredFromAdmin && featuredFromAdmin.length > 0)
+      ? featuredFromAdmin.slice(0, 6)
+      : getRandomProducts(allProducts || [], 6);
+
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-gray-50">
-      <div className="max-w-2xl mx-auto text-center w-full">
-        <div className="bg-white rounded-lg shadow-lg p-8 md:p-12">
-          <div className="mb-8 flex justify-center">
-            <Image 
-              src="/logosvg.svg" 
-              alt="HappyDeel Logo"
-              width={192}
-              height={40}
-              priority
-              className="w-48"
-            />
-          </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
-            Temporary Closure Notice
-          </h1>
-          <div className="space-y-4 text-gray-700 text-lg leading-relaxed">
-            <p>
-              Due to the high volume of orders this holiday season, we are temporarily closed 
-              until we manage to fulfill the massive amount of orders we currently have.
-            </p>
-            <p>
-              We are experiencing some delays in processing and shipping. We appreciate your 
-              patience and understanding during this busy period.
-            </p>
-            <p className="pt-4 border-t border-gray-200">
-              For more information, please contact us at{' '}
-              <a 
-                href="mailto:support@happydeel.com" 
-                className="text-[#0046be] hover:text-[#003399] font-semibold underline transition-colors"
-              >
-                support@happydeel.com
-              </a>
-            </p>
+    <>
+      <Suspense fallback={null}>
+        <ScrollToTop />
+      </Suspense>
+      <Hero />
+      
+      <section id="featured" className="py-16 bg-gray-100 overflow-visible">
+        <div className="container mx-auto px-4 overflow-visible">
+          <div className="w-full max-w-7xl mx-auto overflow-visible">
+            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:gap-10 overflow-visible">
+              {featuredProducts.map((product) => (
+                <FeaturedProduct key={product.id} product={product} />
+              ))}
+            </div>
           </div>
         </div>
-      </div>
-    </div>
+      </section>
+      
+      <SameDayShipping />
+      
+      <FashionProducts products={allProducts || []} />
+      
+      <Suspense fallback={null}>
+        <ProductGrid products={allProducts} />
+      </Suspense>
+      
+      <HomeReviews 
+        reviews={homeReviews}
+        averageRating={homeReviewsStats.averageRating}
+        totalReviews={homeReviewsStats.totalReviews}
+      />
+    </>
   );
+  } catch (error) {
+    console.error('Error loading homepage:', error);
+    // Return a minimal error page that won't break
+    return (
+      <>
+        <Hero />
+        <div className="container mx-auto px-4 py-16 text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Unable to load products</h2>
+          <p className="text-gray-600">Please refresh the page or try again later.</p>
+        </div>
+      </>
+    );
+  }
 }

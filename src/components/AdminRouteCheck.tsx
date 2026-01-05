@@ -7,9 +7,8 @@ export function AdminRouteCheck({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const isAdminRoute = pathname?.startsWith('/admin');
   const isCheckoutRoute = pathname?.startsWith('/checkout');
-  const isHomePage = pathname === '/';
 
-  if (isAdminRoute || isCheckoutRoute || isHomePage) {
+  if (isAdminRoute || isCheckoutRoute) {
     return null;
   }
 
@@ -20,9 +19,8 @@ export function PublicRouteOnly({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const isAdminRoute = pathname?.startsWith('/admin');
   const isCheckoutRoute = pathname?.startsWith('/checkout');
-  const isHomePage = pathname === '/';
 
-  if (isAdminRoute || isCheckoutRoute || isHomePage) {
+  if (isAdminRoute || isCheckoutRoute) {
     return null;
   }
 
@@ -45,17 +43,6 @@ export function CheckoutRouteOnly({ children }: { children: ReactNode }) {
   const isCheckoutRoute = pathname?.startsWith('/checkout');
 
   if (!isCheckoutRoute) {
-    return null;
-  }
-
-  return <>{children}</>;
-}
-
-export function ClosurePageOnly({ children }: { children: ReactNode }) {
-  const pathname = usePathname();
-  const isHomePage = pathname === '/';
-
-  if (!isHomePage) {
     return null;
   }
 

@@ -51,7 +51,7 @@ export async function POST(
         .from('orders')
         .select('id')
         .limit(5);
-      console.log('📋 [MARK-CONVERTED] Sample order IDs in database:', sampleOrders?.map(o => o.id));
+      console.log('📋 [MARK-CONVERTED] Sample order IDs in database:', sampleOrders ? sampleOrders.map((o: { id: string }) => o.id) : 'none');
       
       return NextResponse.json(
         { 

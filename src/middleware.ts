@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { supabaseAdmin } from '@/lib/supabase/server';
+import { isAdmin } from '@/lib/supabase/auth';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -67,7 +69,6 @@ export async function middleware(request: NextRequest) {
       return response;
     } catch (error) {
       // Error verifying token, redirect to login
-      console.error('Error in admin authentication:', error);
       const response = NextResponse.redirect(new URL('/admin/login', request.url));
       response.cookies.delete('admin_token');
       return response;

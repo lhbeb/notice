@@ -1,4 +1,4 @@
-// Lazy import - will be imported when needed
+import { supabaseAdmin } from './server';
 
 /**
  * Check if authentication should be bypassed in development
@@ -74,9 +74,6 @@ export async function authenticateAdmin(
   password: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    // Lazy import to avoid initialization errors
-    const { getSupabaseAdmin } = await import('./server');
-    const supabaseAdmin = getSupabaseAdmin();
     const { data, error } = await supabaseAdmin.auth.signInWithPassword({
       email,
       password,

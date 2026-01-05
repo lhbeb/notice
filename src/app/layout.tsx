@@ -9,7 +9,7 @@ import CookieConsent from "@/components/CookieConsent";
 import Script from "next/script";
 import { Suspense } from "react";
 import VisitNotifier from "@/components/VisitNotifier";
-import { AdminRouteCheck, PublicRouteOnly, AdminRouteOnly, CheckoutRouteOnly, ClosurePageOnly } from "@/components/AdminRouteCheck";
+import { AdminRouteCheck, PublicRouteOnly, AdminRouteOnly, CheckoutRouteOnly } from "@/components/AdminRouteCheck";
 
 export const metadata: Metadata = {
   title: "HappyDeel - Everything You Want, One Marketplace.",
@@ -139,15 +139,6 @@ export default function RootLayout({
         </AdminRouteCheck>
         
         <ErrorBoundaryWrapper>
-          {/* Closure notice page - minimal, no header, footer, or sections */}
-          <ClosurePageOnly>
-            <div className="min-h-screen flex flex-col">
-              <main className="flex-grow">
-                {children}
-              </main>
-            </div>
-          </ClosurePageOnly>
-          
           {/* Public website with header, footer, etc. */}
           <PublicRouteOnly>
             <div className="min-h-screen flex flex-col">
