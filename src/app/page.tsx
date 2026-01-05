@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 
@@ -17,13 +16,10 @@ export default function ClosureNoticePage() {
       <div className="max-w-2xl w-full bg-white rounded-lg shadow-xl p-8 md:p-12 text-center">
         {/* Logo */}
         <div className="mb-8 flex justify-center">
-          <Image
+          <img
             src="/logosvg.svg"
             alt="HappyDeel Logo"
-            width={200}
-            height={60}
-            className="h-auto w-auto max-w-[200px]"
-            priority
+            className="w-48 h-auto max-w-[200px]"
           />
         </div>
 
