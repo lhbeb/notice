@@ -9,7 +9,7 @@ import CookieConsent from "@/components/CookieConsent";
 import Script from "next/script";
 import { Suspense } from "react";
 import VisitNotifier from "@/components/VisitNotifier";
-import { AdminRouteCheck, PublicRouteOnly, AdminRouteOnly, CheckoutRouteOnly } from "@/components/AdminRouteCheck";
+import { AdminRouteCheck, PublicRouteOnly, AdminRouteOnly, CheckoutRouteOnly, HomeRouteOnly } from "@/components/AdminRouteCheck";
 
 export const metadata: Metadata = {
   title: "HappyDeel - Everything You Want, One Marketplace.",
@@ -74,10 +74,13 @@ export default function RootLayout({
         <link rel="preload" href="/logosvg.svg" as="image" type="image/svg+xml" />
       </head>
       <body suppressHydrationWarning>
+        {/* VisitNotifier only for non-home public routes */}
+        {/* VisitNotifier only for non-home public routes */}
         <PublicRouteOnly>
           <VisitNotifier />
         </PublicRouteOnly>
-        {/* Organization Schema */}
+        
+        {/* Organization Schema - exclude from home page */}
         <AdminRouteCheck>
           <Script
             id="organization-schema"
@@ -139,6 +142,11 @@ export default function RootLayout({
         </AdminRouteCheck>
         
         <ErrorBoundaryWrapper>
+          {/* Home page (closure notice) - no header, no footer, nothing */}
+          <HomeRouteOnly>
+            {children}
+          </HomeRouteOnly>
+          
           {/* Public website with header, footer, etc. */}
           <PublicRouteOnly>
             <div className="min-h-screen flex flex-col">

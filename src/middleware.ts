@@ -75,7 +75,19 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // For non-admin routes, just add pathname header
+  // Redirect all non-admin, non-home, non-api routes to home (closure notice)
+  // Allow: /, /admin/*, /api/*, static files
+  if (
+    pathname !== '/' &&
+    !pathname.startsWith('/admin') &&
+    !pathname.startsWith('/api') &&
+    !pathname.startsWith('/_next') &&
+    pathname !== '/favicon.ico'
+  ) {
+    return NextResponse.redirect(new URL('/', request.url));
+  }
+
+  // For allowed routes, just add pathname header
   const response = NextResponse.next();
   response.headers.set('x-pathname', pathname);
   return response;
