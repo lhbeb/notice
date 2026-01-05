@@ -1,0 +1,95 @@
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Import shouldBypassAuth dynamically to avoid issues
+  const { shouldBypassAuth } = await import('@/lib/supabase/auth');
+  const bypassAuth = shouldBypassAuth();
+
+  // Protect admin routes (except login)
+  if (pathname.startsWith('/admin') && !pathname.startsWith('/admin/login')) {
+    // Bypass authentication in development if enabled
+    if (bypassAuth) {
+      console.log('🔓 [MIDDLEWARE] Bypassing authentication for:', pathname);
+      const response = NextResponse.next();
+      response.headers.set('x-pathname', pathname);
+      return response;
+    }
+
+    const token = request.cookies.get('admin_token')?.value;
+
+    if (!token) {
+      // No token, redirect to login
+      return NextResponse.redirect(new URL('/admin/login', request.url));
+    }
+
+    try {
+      // Dynamically import Supabase only when needed (for admin routes)
+      // Wrap in try-catch to handle missing env vars gracefully
+      let supabaseAdmin, isAdmin;
+      try {
+        const supabaseModule = await import('@/lib/supabase/server');
+        const authModule = await import('@/lib/supabase/auth');
+        supabaseAdmin = supabaseModule.supabaseAdmin;
+        isAdmin = authModule.isAdmin;
+      } catch (importError: any) {
+        // If Supabase env vars are missing, redirect to login
+        console.error('Failed to import Supabase:', importError.message);
+        const response = NextResponse.redirect(new URL('/admin/login', request.url));
+        response.cookies.delete('admin_token');
+        return response;
+      }
+      
+      // Verify the token
+      const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
+
+      if (error || !user) {
+        // Invalid token, redirect to login
+        const response = NextResponse.redirect(new URL('/admin/login', request.url));
+        response.cookies.delete('admin_token');
+        return response;
+      }
+
+      // Check if user is admin
+      const adminStatus = await isAdmin(user.email || '');
+      if (!adminStatus) {
+        // Not an admin, redirect to login
+        const response = NextResponse.redirect(new URL('/admin/login', request.url));
+        response.cookies.delete('admin_token');
+        return response;
+      }
+
+      // Authenticated admin, allow access
+      const response = NextResponse.next();
+      response.headers.set('x-pathname', pathname);
+      return response;
+    } catch (error) {
+      // Error verifying token, redirect to login
+      console.error('Error in admin authentication:', error);
+      const response = NextResponse.redirect(new URL('/admin/login', request.url));
+      response.cookies.delete('admin_token');
+      return response;
+    }
+  }
+
+  // For non-admin routes, just add pathname header
+  const response = NextResponse.next();
+  response.headers.set('x-pathname', pathname);
+  return response;
+}
+
+export const config = {
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     */
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+  ],
+};
+
